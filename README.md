@@ -27,6 +27,8 @@ A modular Python application designed to visualize classic AI search algorithms 
    ```bash
    poetry install
    ```
+---
+
 ### 🎮 Controls
 
 The application utilizes a state-driven interaction model to manage the grid environment and algorithm execution.
