@@ -1,3 +1,9 @@
+"""
+Implementation of Depth-Limited Search (DLS).
+Iterative approach.
+"""
+
+
 def run_dls(grid_matrix, start_node, target_node, total_rows, total_cols, limit=50):
     nodes_to_visit_stack = [(start_node, 0)]
     parent_tracker = {}
@@ -7,6 +13,8 @@ def run_dls(grid_matrix, start_node, target_node, total_rows, total_cols, limit=
         current_active_node, current_depth = nodes_to_visit_stack.pop()
 
         if current_active_node == target_node:
+            # Draw the path visually BEFORE returning the data
+            yield from reconstruct_final_path(parent_tracker, target_node, start_node)
             return parent_tracker
 
         if current_depth >= limit:
@@ -29,3 +37,11 @@ def run_dls(grid_matrix, start_node, target_node, total_rows, total_cols, limit=
                 nodes_to_visit_stack.append((neighbor, new_depth))
         yield True
     return None
+
+
+def reconstruct_final_path(parent_tracker, current_step, start_node):
+    while current_step in parent_tracker:
+        current_step = parent_tracker[current_step]
+        if current_step != start_node:
+            current_step.mark_as_path_segment()
+        yield True
