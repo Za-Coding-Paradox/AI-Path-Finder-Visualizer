@@ -1,10 +1,12 @@
+import sys
+
 import pygame
 import pygame_gui
-import sys
 
 # Configuration
 WIDTH, HEIGHT = 800, 600
 FPS = 60
+
 
 def main():
     pygame.init()
@@ -15,14 +17,12 @@ def main():
 
     # Create a simple "Hello" button to prove it works
     hello_button = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect((350, 275), (100, 50)),
-        text='Hello!',
-        manager=manager
+        relative_rect=pygame.Rect((350, 275), (100, 50)), text="Hello!", manager=manager
     )
 
     is_running = True
     while is_running:
-        time_delta = clock.tick(FPS)/1000.0
+        time_delta = clock.tick(FPS) / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
@@ -35,6 +35,7 @@ def main():
 
     pygame.quit()
     sys.exit()
+
 
 if __name__ == "__main__":
     main()
