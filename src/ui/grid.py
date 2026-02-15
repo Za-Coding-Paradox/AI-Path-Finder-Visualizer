@@ -86,9 +86,14 @@ class GridNode:
         pygame.draw.rect(surface, COLOR_GRID, rect_dimensions, 1)
 
     def identify_neighbors(self, grid_matrix, total_rows, total_cols):
-        """Standard 4-way connectivity check (Up, Down, Left, Right)."""
+        """
+        Identifies accessible neighbors following the
+        mandatory 6-direction clockwise order.
+        Includes CORNER CUTTING CHECKS to prevent passing through walls.
+        """
         self.neighbor_nodes = []
 
+        # (Row Change, Col Change)
         STRICT_MOVEMENT_ORDER = [
             (-1, 0),  # 1. Up
             (0, 1),  # 2. Right
@@ -102,16 +107,35 @@ class GridNode:
             target_row = self.row + row_change
             target_col = self.col + col_change
 
-            # Boundary Check
+            # 1. Boundary Check
             if 0 <= target_row < total_rows and 0 <= target_col < total_cols:
                 potential_neighbor = grid_matrix[target_row][target_col]
 
-                # Check if the node is traversable
+                # 2. Basic Obstacle Check (Is it a Wall or Dynamic Obstacle?)
                 if (
                     not potential_neighbor.is_barrier()
                     and potential_neighbor.state_type != "DYNAMIC"
                 ):
-                    # Append to Queue
+                    # 3. CORNER CUTTING CHECK (Prevent diagonal squeezing)
+                    # If moving diagonally (both row and col change is not 0)
+                    if row_change != 0 and col_change != 0:
+                        # Check the two adjacent cardinal nodes
+                        # Node A: Same row, new col
+                        # Node B: New row, same col
+                        node_a = grid_matrix[self.row][target_col]
+                        node_b = grid_matrix[target_row][self.col]
+
+                        # If EITHER cardinal neighbor is a barrier, block the diagonal move.
+                        # This prevents "squeezing" through a diagonal gap.
+                        if (
+                            node_a.is_barrier()
+                            or node_a.state_type == "DYNAMIC"
+                            or node_b.is_barrier()
+                            or node_b.state_type == "DYNAMIC"
+                        ):
+                            continue  # Skip this neighbor
+
+                    # If we passed all checks, add to neighbors
                     self.neighbor_nodes.append(potential_neighbor)
 
 
@@ -132,7 +156,8 @@ def render_grid_state(surface, grid_matrix):
     for row in grid_matrix:
         for node in row:
             node.render(surface)
-    pygame.display.flip()
+    # Note: pygame.display.flip() is handled in the main loop, not here usually,
+    # but kept for compatibility with your existing snippets.
 
 
 def get_node_from_mouse_click(
@@ -142,7 +167,6 @@ def get_node_from_mouse_click(
     pos_x, pos_y = mouse_position
 
     # Reverse the pixel math: (Pixel - Offset) / Size
-    # Translates absolute screen pixels into grid indices by subtracting the padding and dividing by cell width.
     target_col = (pos_x - offset_x) // cell_size
     target_row = (pos_y - offset_y) // cell_size
 
