@@ -3,7 +3,7 @@ name = "algorithm-visualizer"
 version = "0.1.0"
 description = "A high-performance algorithm visualizer"
 authors = [
-    {name = "inconceivable"}
+    {name = "za-coding-paradox & Mtz00"}
 ]
 readme = "README.md"
 requires-python = "^3.12"
