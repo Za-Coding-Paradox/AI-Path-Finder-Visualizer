@@ -13,7 +13,6 @@ def run_dfs(grid_matrix, start_node, target_node, total_rows, total_cols):
         current_active_node = nodes_to_visit_stack.pop()
 
         if current_active_node == target_node:
-            # We use the same reconstruction logic across files
             while current_active_node in parent_tracker:
                 current_active_node = parent_tracker[current_active_node]
                 if current_active_node != start_node:

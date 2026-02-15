@@ -1,4 +1,5 @@
 """
+            # We use the same reconstruction logic across files
 Implementation of Iterative Deepening DFS (IDDFS).
 Repeatedly applies Depth-Limited Search with an increasing limit.
 """
@@ -9,7 +10,6 @@ from dls import run_dls
 def run_iddfs(grid_matrix, start_node, target_node, total_rows, total_cols):
     # Iterate through possible depths
     for current_max_depth in range(total_rows * total_cols):
-        # Reset visual state for new iteration
         for row in grid_matrix:
             for node in row:
                 if node.state_type == "EMPTY":
@@ -26,7 +26,6 @@ def run_iddfs(grid_matrix, start_node, target_node, total_rows, total_cols):
         )
 
         if parent_tracker:
-            # Reconstruct path logic
             temp_node = target_node
             while temp_node in parent_tracker:
                 temp_node = parent_tracker[temp_node]
