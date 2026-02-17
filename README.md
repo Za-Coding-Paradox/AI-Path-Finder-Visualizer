@@ -83,7 +83,7 @@ poetry --version
 
 ### Step 1 — Clone the Repository
 ```bash
-git clone https://github.com/your-username/ai-path-finder.git
+git clone https://github.com/Za-Coding-Paradox/AI-Path-Finder-Visualizer.git
 cd ai-path-finder
 ```
 
