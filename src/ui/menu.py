@@ -2,9 +2,7 @@
 User Interface Management Layer.
 Responsible for rendering the Control Panel, Buttons, and Result Pop-ups.
 """
-
 import pygame
-
 import utils.config as configuration_settings
 
 
@@ -52,10 +50,6 @@ class InterfaceRenderer:
             self.buttons.append(btn)
 
     def render_control_panel(self, active_algorithm_name, execution_status):
-        """
-        Draws the sidebar, buttons, and status text.
-        """
-        # Clear sidebar
         sidebar_rect = pygame.Rect(
             800,
             0,
@@ -66,7 +60,6 @@ class InterfaceRenderer:
             self.target_surface, configuration_settings.COLOR_BG, sidebar_rect
         )
 
-        # Separator Line
         pygame.draw.line(
             self.target_surface,
             configuration_settings.COLOR_GRID,
@@ -75,15 +68,13 @@ class InterfaceRenderer:
             2,
         )
 
-        # Title
         title_visual = self.header_font.render(
             "PATHFINDER", True, configuration_settings.COLOR_PATH
         )
         self.target_surface.blit(title_visual, (815, 30))
 
-        # Status Text
         if execution_status == "RUNNING":
-            status_color = configuration_settings.COLOR_DYNAMIC
+            status_color = configuration_settings.COLOR_FRONTIER
             status_text = "RUNNING..."
         elif execution_status == "FINISHED":
             status_color = configuration_settings.COLOR_TARGET
@@ -102,11 +93,9 @@ class InterfaceRenderer:
         )
         self.target_surface.blit(algo_visual, (815, 110))
 
-        # Buttons
         for btn in self.buttons:
             btn.draw(self.target_surface)
 
-        # Instructions
         instr_y = 650
         instructions = [
             "SPACE: Start",
@@ -148,10 +137,11 @@ class InterfaceRenderer:
         )
 
         msg = "PATH FOUND!" if success else "NO PATH POSSIBLE"
+        
         color = (
             configuration_settings.COLOR_START
             if success
-            else configuration_settings.COLOR_DYNAMIC
+            else configuration_settings.COLOR_TARGET 
         )
 
         text_surf = self.popup_font.render(msg, True, color)
