@@ -1,33 +1,41 @@
 """
 User Interface Management Layer.
-Responsible for rendering the Control Panel, Buttons, and Result Pop-ups.
+Modern Dashboard Design.
 """
 import pygame
-import utils.config as configuration_settings
+import utils.config as cfg
 
-
-class Button:
+class ModernButton:
     def __init__(self, x, y, width, height, text, action_payload):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.action_payload = action_payload
-        self.base_color = configuration_settings.COLOR_EMPTY
-        self.hover_color = configuration_settings.COLOR_EXPLORED
-        self.text_color = pygame.Color("white")
-        self.font = pygame.font.SysFont("JetBrainsMono Nerd Font", 18, bold=True)
+        
+        self.col_idle = cfg.COLOR_PANEL
+        self.col_hover = cfg.COLOR_FRONTIER
+        self.col_active = cfg.COLOR_PATH
+        self.col_text = cfg.COLOR_TEXT_MAIN
+        
+        self.font = pygame.font.SysFont("JetBrainsMono Nerd Font", 16, bold=True)
+        self.active = False
 
-    def draw(self, surface):
+    def draw(self, surface, is_selected=False):
         mouse_pos = pygame.mouse.get_pos()
-        color = (
-            self.hover_color if self.rect.collidepoint(mouse_pos) else self.base_color
-        )
+        is_hovered = self.rect.collidepoint(mouse_pos)
+        
+        if is_selected:
+            bg_color = self.col_active
+            text_color = cfg.COLOR_SIDEBAR
+        elif is_hovered:
+            bg_color = self.col_hover
+            text_color = cfg.COLOR_SIDEBAR
+        else:
+            bg_color = self.col_idle
+            text_color = self.col_text
 
-        pygame.draw.rect(surface, color, self.rect, border_radius=5)
-        pygame.draw.rect(
-            surface, configuration_settings.COLOR_GRID, self.rect, 2, border_radius=5
-        )
-
-        text_surf = self.font.render(self.text, True, self.text_color)
+        pygame.draw.rect(surface, bg_color, self.rect, border_radius=8)
+        
+        text_surf = self.font.render(self.text, True, text_color)
         text_rect = text_surf.get_rect(center=self.rect.center)
         surface.blit(text_surf, text_rect)
 
@@ -37,136 +45,116 @@ class Button:
 
 class InterfaceRenderer:
     def __init__(self, display_surface):
-        self.target_surface = display_surface
-        self.standard_text_font = pygame.font.SysFont("JetBrainsMono Nerd Font", 16)
-        self.header_font = pygame.font.SysFont("JetBrainsMono Nerd Font", 32, bold=True)
-        self.popup_font = pygame.font.SysFont("JetBrainsMono Nerd Font", 40, bold=True)
-
+        self.display = display_surface
+        
+        self.font_title = pygame.font.SysFont("JetBrainsMono Nerd Font", 28, bold=True)
+        self.font_label = pygame.font.SysFont("JetBrainsMono Nerd Font", 14)
+        self.font_value = pygame.font.SysFont("JetBrainsMono Nerd Font", 20, bold=True)
+        
+        self.sidebar_width = 280
+        self.padding = 20
+        
         self.buttons = []
         algos = ["BFS", "DFS", "UCS", "DLS", "IDDFS", "BIDIRECTIONAL"]
-        start_y = 200
+        
+        btn_start_y = 280
+        btn_height = 40
         for i, algo in enumerate(algos):
-            btn = Button(820, start_y + (i * 45), 160, 35, algo, algo)
+            y_pos = btn_start_y + (i * (btn_height + 10))
+            btn = ModernButton(
+                self.padding, 
+                y_pos, 
+                self.sidebar_width - (self.padding * 2), 
+                btn_height, 
+                algo, 
+                algo
+            )
             self.buttons.append(btn)
 
-    def render_control_panel(self, active_algorithm_name, execution_status):
-        sidebar_rect = pygame.Rect(
-            800,
-            0,
-            configuration_settings.WINDOW_WIDTH - 800,
-            configuration_settings.WINDOW_HEIGHT,
-        )
-        pygame.draw.rect(
-            self.target_surface, configuration_settings.COLOR_BG, sidebar_rect
-        )
+    def render_control_panel(self, active_algorithm, status):
+        sidebar_rect = pygame.Rect(0, 0, self.sidebar_width, cfg.WINDOW_HEIGHT)
+        pygame.draw.rect(self.display, cfg.COLOR_SIDEBAR, sidebar_rect)
+        
+        title_surf = self.font_title.render("PATHFINDER", True, cfg.COLOR_PATH)
+        self.display.blit(title_surf, (self.padding, 30))
+        
+        sub_surf = self.font_label.render("AI VISUALIZER v2.0", True, cfg.COLOR_GRID)
+        self.display.blit(sub_surf, (self.padding, 65))
 
-        pygame.draw.line(
-            self.target_surface,
-            configuration_settings.COLOR_GRID,
-            (800, 0),
-            (800, configuration_settings.WINDOW_HEIGHT),
-            2,
-        )
+        panel_rect = pygame.Rect(self.padding, 110, self.sidebar_width - 40, 140)
+        pygame.draw.rect(self.display, cfg.COLOR_PANEL, panel_rect, border_radius=12)
+        
+        lbl_status = self.font_label.render("CURRENT STATUS", True, cfg.COLOR_FRONTIER)
+        self.display.blit(lbl_status, (panel_rect.x + 15, panel_rect.y + 15))
+        
+        col_status = cfg.COLOR_START if status == "FINISHED" else (cfg.COLOR_TARGET if status == "RUNNING" else cfg.COLOR_TEXT_MAIN)
+        val_status = self.font_value.render(status, True, col_status)
+        self.display.blit(val_status, (panel_rect.x + 15, panel_rect.y + 35))
 
-        title_visual = self.header_font.render(
-            "PATHFINDER", True, configuration_settings.COLOR_PATH
-        )
-        self.target_surface.blit(title_visual, (815, 30))
+        pygame.draw.line(self.display, cfg.COLOR_SIDEBAR, (panel_rect.x + 10, panel_rect.y + 70), (panel_rect.right - 10, panel_rect.y + 70), 2)
 
-        if execution_status == "RUNNING":
-            status_color = configuration_settings.COLOR_FRONTIER
-            status_text = "RUNNING..."
-        elif execution_status == "FINISHED":
-            status_color = configuration_settings.COLOR_TARGET
-            status_text = "DONE"
-        else:
-            status_color = configuration_settings.COLOR_EXPLORED
-            status_text = "IDLE"
-
-        status_visual = self.standard_text_font.render(
-            f"Status: {status_text}", True, status_color
-        )
-        self.target_surface.blit(status_visual, (815, 80))
-
-        algo_visual = self.standard_text_font.render(
-            f"Algo: {active_algorithm_name}", True, configuration_settings.COLOR_START
-        )
-        self.target_surface.blit(algo_visual, (815, 110))
+        lbl_algo = self.font_label.render("SELECTED ALGORITHM", True, cfg.COLOR_FRONTIER)
+        self.display.blit(lbl_algo, (panel_rect.x + 15, panel_rect.y + 85))
+        
+        val_algo = self.font_value.render(active_algorithm, True, cfg.COLOR_TEXT_MAIN)
+        self.display.blit(val_algo, (panel_rect.x + 15, panel_rect.y + 105))
 
         for btn in self.buttons:
-            btn.draw(self.target_surface)
+            is_selected = (btn.action_payload == active_algorithm)
+            btn.draw(self.display, is_selected)
 
-        instr_y = 650
-        instructions = [
-            "SPACE: Start",
-            "C: Reset Grid",
-            "L-CLICK: Place",
-            "R-CLICK: Erase",
+        instr_y = cfg.WINDOW_HEIGHT - 120
+        keys = [
+            ("SPACE", "Start Search"),
+            ("C", "Clear Grid"),
+            ("L-CLICK", "Place Node"),
+            ("R-CLICK", "Remove Node")
         ]
-        for line in instructions:
-            v = self.standard_text_font.render(
-                line, True, configuration_settings.COLOR_EMPTY
-            )
-            self.target_surface.blit(v, (815, instr_y))
-            instr_y += 25
-
-    def render_result_popup(self, success, elapsed_time=0.0):
-        # Semi-transparent overlay
-        # We only cover the bottom area to not obstruct the view too much?
-        # Or just cover everything lightly
-        overlay = pygame.Surface(
-            (configuration_settings.WINDOW_WIDTH, configuration_settings.WINDOW_HEIGHT),
-            pygame.SRCALPHA,
-        )
-        overlay.fill((0, 0, 0, 100)) # Lighter overlay
-        self.target_surface.blit(overlay, (0, 0))
-
-        # Popup Box - Repositioned BELOW the grid
-        # Grid Center X is approx 400. Grid ends at Y=550.
-        # Let's place it at Y=680
-        center_x = 400
-        center_y = 680
         
-        box_rect = pygame.Rect(0, 0, 400, 150)
-        box_rect.center = (center_x, center_y)
+        for key, desc in keys:
+            k_surf = self.font_label.render(f"[{key}]", True, cfg.COLOR_FRONTIER)
+            d_surf = self.font_label.render(desc, True, cfg.COLOR_GRID)
+            
+            self.display.blit(k_surf, (self.padding, instr_y))
+            self.display.blit(d_surf, (self.padding + 80, instr_y))
+            instr_y += 22
 
-        pygame.draw.rect(
-            self.target_surface,
-            configuration_settings.COLOR_BG,
-            box_rect,
-            border_radius=10,
-        )
-        pygame.draw.rect(
-            self.target_surface,
-            configuration_settings.COLOR_PATH,
-            box_rect,
-            3,
-            border_radius=10,
-        )
+    def render_result_popup(self, success, duration):
+        dim_surf = pygame.Surface((cfg.WINDOW_WIDTH, cfg.WINDOW_HEIGHT), pygame.SRCALPHA)
+        dim_surf.fill((0, 0, 0, 150))
+        self.display.blit(dim_surf, (0, 0))
 
-        msg = "PATH FOUND!" if success else "NO PATH POSSIBLE"
+        cw, ch = 400, 250
+        cx = (cfg.WINDOW_WIDTH // 2) - (cw // 2)
+        cy = (cfg.WINDOW_HEIGHT // 2) - (ch // 2)
         
-        color = (
-            configuration_settings.COLOR_START
-            if success
-            else configuration_settings.COLOR_TARGET 
-        )
-
-        text_surf = self.popup_font.render(msg, True, color)
-        text_rect = text_surf.get_rect(center=(center_x, center_y - 30))
-        self.target_surface.blit(text_surf, text_rect)
+        modal_rect = pygame.Rect(cx, cy, cw, ch)
         
-        # Display Time
-        time_msg = f"Time: {elapsed_time:.2f}s"
-        time_surf = self.standard_text_font.render(time_msg, True, (200, 200, 200))
-        time_rect = time_surf.get_rect(center=(center_x, center_y + 10))
-        self.target_surface.blit(time_surf, time_rect)
+        pygame.draw.rect(self.display, cfg.COLOR_SIDEBAR, modal_rect, border_radius=15)
+        pygame.draw.rect(self.display, cfg.COLOR_PANEL, modal_rect, 2, border_radius=15)
 
-        sub_surf = self.standard_text_font.render(
-            "Press 'C' to Reset", True, configuration_settings.COLOR_EXPLORED
-        )
-        sub_rect = sub_surf.get_rect(center=(center_x, center_y + 40))
-        self.target_surface.blit(sub_surf, sub_rect)
+        header_text = "SEARCH COMPLETE"
+        sub_text = "Target Found Successfully" if success else "Target Unreachable"
+        color = cfg.COLOR_START if success else cfg.COLOR_TARGET
+        
+        surf_header = self.font_value.render(header_text, True, cfg.COLOR_TEXT_MAIN)
+        surf_sub = self.font_label.render(sub_text, True, color)
+        
+        self.display.blit(surf_header, (cx + 30, cy + 30))
+        self.display.blit(surf_sub, (cx + 30, cy + 60))
+
+        stats_rect = pygame.Rect(cx + 30, cy + 100, cw - 60, 60)
+        pygame.draw.rect(self.display, cfg.COLOR_PANEL, stats_rect, border_radius=8)
+        
+        time_lbl = self.font_label.render("Time Elapsed:", True, cfg.COLOR_GRID)
+        time_val = self.font_value.render(f"{duration:.4f}s", True, cfg.COLOR_TEXT_MAIN)
+        
+        self.display.blit(time_lbl, (stats_rect.x + 15, stats_rect.y + 10))
+        self.display.blit(time_val, (stats_rect.x + 15, stats_rect.y + 30))
+
+        footer = self.font_label.render("Press 'C' to Reset Grid", True, cfg.COLOR_FRONTIER)
+        footer_rect = footer.get_rect(center=(cx + cw//2, cy + ch - 30))
+        self.display.blit(footer, footer_rect)
 
     def check_button_clicks(self, pos):
         for btn in self.buttons:

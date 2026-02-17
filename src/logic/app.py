@@ -1,5 +1,6 @@
 """
 The Application Orchestrator.
+Updated for Left Sidebar Layout.
 """
 import pygame
 import time
@@ -15,8 +16,7 @@ class PathfinderApp:
             (global_config.WINDOW_WIDTH, global_config.WINDOW_HEIGHT),
             pygame.RESIZABLE
         )
-        
-        pygame.display.set_caption("AI Pathfinder Visualizer")
+        pygame.display.set_caption("AI Pathfinder Visualizer v2.0")
         
         self.execution_clock = pygame.time.Clock()
 
@@ -35,7 +35,7 @@ class PathfinderApp:
         self.is_application_active = True
         
         self.finish_time_stamp = None
-        self.POPUP_DELAY_SECONDS = 1.5
+        self.POPUP_DELAY_SECONDS = 1.0
         self.last_step_time = 0
 
     def _process_user_inputs(self):
@@ -47,50 +47,52 @@ class PathfinderApp:
                 self.display_surface = pygame.display.set_mode(
                     (active_event.w, active_event.h), pygame.RESIZABLE
                 )
-                self.ui_renderer.target_surface = self.display_surface
+                self.ui_renderer.display = self.display_surface
 
             if active_event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
-                if not self.logic_orchestrator.is_running:
-                    clicked_algo = self.ui_renderer.check_button_clicks(mouse_pos)
-                    if clicked_algo:
-                        self.logic_orchestrator.set_algorithm(clicked_algo)
-
-            if not self.logic_orchestrator.is_running and not self.logic_orchestrator.is_finished:
-                self._handle_grid_interactions()
+                
+                if mouse_pos[0] < 280:
+                    if not self.logic_orchestrator.is_running:
+                        clicked_algo = self.ui_renderer.check_button_clicks(mouse_pos)
+                        if clicked_algo:
+                            self.logic_orchestrator.set_algorithm(clicked_algo)
+                
+                elif not self.logic_orchestrator.is_running and not self.logic_orchestrator.is_finished:
+                    self._handle_grid_interactions()
 
             self._handle_keyboard_commands(active_event)
 
     def _handle_grid_interactions(self):
         mouse_pixel_position = pygame.mouse.get_pos()
-        if mouse_pixel_position[0] < 800: 
-            grid_coordinates = get_node_from_mouse_click(
-                mouse_pixel_position,
-                global_config.GRID_SIZE,
-                global_config.GRID_SIZE,
-                global_config.CELL_SIZE,
-                global_config.GRID_OFFSET_X,
-                global_config.GRID_OFFSET_Y
-            )
-            if not grid_coordinates: return
+        
+        grid_coordinates = get_node_from_mouse_click(
+            mouse_pixel_position,
+            global_config.GRID_SIZE,
+            global_config.GRID_SIZE,
+            global_config.CELL_SIZE,
+            global_config.GRID_OFFSET_X,
+            global_config.GRID_OFFSET_Y
+        )
+        if not grid_coordinates: return
 
-            target_row, target_col = grid_coordinates
-            current_node = self.grid_matrix[target_row][target_col]
+        target_row, target_col = grid_coordinates
+        current_node = self.grid_matrix[target_row][target_col]
 
-            if pygame.mouse.get_pressed()[0]:
-                if not self.origin_node and current_node != self.destination_node:
-                    self.origin_node = current_node
-                    self.origin_node.set_as_start()
-                elif not self.destination_node and current_node != self.origin_node:
-                    self.destination_node = current_node
-                    self.destination_node.set_as_target()
-                elif current_node not in [self.origin_node, self.destination_node]:
-                    current_node.set_as_wall()
+        if pygame.mouse.get_pressed()[0]:
+            if not self.origin_node and current_node != self.destination_node:
+                self.origin_node = current_node
+                self.origin_node.set_as_start()
+            elif not self.destination_node and current_node != self.origin_node:
+                self.destination_node = current_node
+                self.destination_node.set_as_target()
+            elif current_node not in [self.origin_node, self.destination_node]:
+                current_node.set_as_wall()
 
-            elif pygame.mouse.get_pressed()[2]:
-                if current_node == self.origin_node: self.origin_node = None
-                elif current_node == self.destination_node: self.destination_node = None
-                current_node.reset_to_empty()
+        elif pygame.mouse.get_pressed()[2]:
+            if current_node == self.origin_node: self.origin_node = None
+            elif current_node == self.destination_node: self.destination_node = None
+            current_node.reset_to_empty()
 
     def _handle_keyboard_commands(self, active_event):
         if active_event.type == pygame.KEYDOWN:
@@ -135,7 +137,6 @@ class PathfinderApp:
                 if not self.logic_orchestrator.is_running and self.logic_orchestrator.is_finished:
                     self.finish_time_stamp = time.time()
 
-            # Pass selected algorithm to render logic
             render_grid_state(
                 self.display_surface, 
                 self.grid_matrix, 
